@@ -2,10 +2,10 @@
   "name": "shasu-dev-portfolio",
   "version": "1.0.0",
   "private": true,
-  "description": "Portafolio estático de Shasu Dev, sin dependencias de producción.",
+  "description": "Diseño original de Shasu Dev separado en HTML, CSS, JavaScript e imágenes.",
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "check": "node --check js/main.js && node --check scripts/serve.mjs && node scripts/check.mjs"
+    "check": "node --check scripts/serve.mjs && node --check scripts/separate-original.mjs && node scripts/check.mjs"
   },
   "engines": { "node": ">=18" }
 }

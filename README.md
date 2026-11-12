@@ -1,58 +1,67 @@
-# Shasu Dev
+# Shasu Dev · diseño original
 
-Portafolio estático, responsive y bilingüe. HTML, CSS y JavaScript nativos: sin framework, compilación, fuentes externas, WebGL ni dependencias de producción.
+Esta rama conserva la apariencia y el contenido de **`Shasu Dev (5).html`**, separando sus estilos, scripts y logo. No aplica el rediseño violeta.
+
+## Ramas
+
+- **`main`**: diseño original, organizado en archivos independientes. Rama activa por defecto en este repositorio local.
+- **`rediseno-violeta`**: la versión alternativa rediseñada, con la captura de Pandatec, nuevos bloques y paleta violeta.
+
+Para cambiar de versión, primero guarda o confirma cualquier cambio pendiente:
+
+```sh
+git switch rediseno-violeta
+git switch main
+```
 
 ## Abrir
 
-Abre `index.html` directamente en el navegador, o usa Node.js 18 o superior:
+Abre `index.html` en el navegador, o con Node.js 18 o superior:
 
 ```sh
 npm start
 ```
 
-Visita `http://localhost:3000`. No hace falta ejecutar `npm install`.
+Visita `http://localhost:3000`. No requiere `npm install` ni compilación.
+
+## Estructura
+
+```text
+index.html                  HTML del diseño original
+css/reset.css               Estilos base originales
+css/styles.css              Diseño, componentes, responsive y animaciones originales
+js/language.js              Español/inglés y copiar usuario
+js/editor.js                Animación del editor de código
+js/interactions.js          Navegación, apariciones y cursor con partículas
+js/scene.js                 Escena 3D con Three.js
+js/terminal.js              Efecto de tarjetas y terminal interactiva
+assets/logo.png             Logo original compartido, antes repetido en base64
+assets/pandatec.png          Captura disponible; no insertada en el diseño original
+scripts/serve.mjs           Servidor local de vista previa
+scripts/check.mjs           Verificación de la separación y sintaxis
+scripts/separate-original.mjs  Transformación reproducible del HTML original
+Shasu Dev (5).html          Fuente original intacta
+captura.png                Captura original intacta
+```
+
+## Qué se conserva
+
+La paleta, tipografías, secciones, textos, elementos de ejemplo, orden, efectos, cursor, escena 3D y terminal del archivo original. El CSS y el JavaScript se extrajeron sin modificar sus bloques ni su orden de ejecución. El encabezado HTML se organizó con sus metadatos dentro de `head`.
+
+También se mantienen **Google Fonts y Three.js desde CDN**, como en el original. Se necesita conexión para descargar esas fuentes y el motor 3D. Si Three.js no está disponible, la escena no se inicia; no se introduce una dependencia de Node.js.
+
+La captura de Pandatec está guardada, pero la tarjeta en `main` conserva la presentación original. El rediseño con la captura integrada está en `rediseno-violeta`.
+
+## Verificar
 
 ```sh
 npm run check
 ```
 
-Comprueba sintaxis, referencias locales, identificadores, imágenes y estructura de traducciones. No sustituye pruebas visuales ni de accesibilidad en navegador.
+Comprueba sintaxis, referencias, logo, orden de scripts y que el cuerpo HTML, CSS y JavaScript coincidan con el original después de separar archivos. Esto verifica la extracción, no es una auditoría visual ni de accesibilidad del diseño original.
 
-## Archivos
-
-```text
-index.html             Contenido, SEO básico y estructura accesible
-css/styles.css         Paleta, componentes y adaptación móvil
-js/main.js             Menú, idioma, navegación y terminal
-assets/logo.png        Logo recuperado del HTML original
-assets/pandatec.png     Captura proporcionada de Pandatec
-assets/favicon.svg     Icono del sitio
-scripts/serve.mjs      Servidor de vista previa local
-scripts/check.mjs      Comprobaciones sin dependencias
-```
-
-`Shasu Dev (5).html` y `captura.png` se conservan intactos como originales. No son necesarios para publicar el sitio nuevo.
-
-## Editar
-
-- **Colores:** variables al inicio de `css/styles.css`. Negro `#09090B`, blanco `#F4F4F5`, violeta `#A78BFA`; gris `#A1A1AA` como apoyo.
-- **Textos:** español dentro de los elementos de `index.html`; inglés en `data-en`. Mantén esos elementos sin etiquetas anidadas. Los textos de la terminal están en `js/main.js`.
-- **Proyectos:** tarjeta real de Pandatec en `#proyectos`. No se publican proyectos, estudios ni testimonios ficticios.
-- **Contacto:** busca `51989168816` en HTML y JavaScript para cambiar WhatsApp. Revisa también perfiles sociales antes de publicar.
-- **Imágenes:** sustituye `assets/pandatec.png` y actualiza `width`, `height` y el texto alternativo si cambia la captura.
-
-## Rendimiento y accesibilidad
-
-- Sin solicitudes a CDNs, fuentes externas, analítica ni cookies de seguimiento.
-- Imágenes con dimensiones para reservar espacio; captura con carga diferida.
-- Sin cursores artificiales, partículas ni bucles permanentes de animación.
-- Menú con estado accesible, Escape y cierre al salir; foco visible y enlace para saltar al contenido.
-- FAQ con `details` nativo; contenido principal y enlaces utilizables sin JavaScript.
-- Respeta `prefers-reduced-motion`. El idioma elegido se recuerda localmente si el navegador lo permite.
-- La terminal es una simulación con comandos permitidos; no ejecuta código ni accede al sistema.
+Si más adelante personalizas el sitio, adapta las comprobaciones de igualdad: están pensadas para esta separación inicial. No ejecutes `scripts/separate-original.mjs` sobre cambios personalizados sin guardarlos; regenera `index.html`, los dos CSS, los cinco scripts y el logo a partir del original.
 
 ## Publicar
 
-Sube **solo `index.html`, `css/`, `js/` y `assets/`** a un alojamiento estático (GitHub Pages, Netlify, Cloudflare Pages o similar). No necesita backend.
-
-Al tener dominio definitivo, agrega la URL canónica y las URLs absolutas `og:url` y `og:image` para las vistas previas sociales. No se incluye una URL inventada. El servidor de `scripts/serve.mjs` es únicamente para desarrollo local.
+Publica `index.html`, `css/`, `js/` y `assets/` en un alojamiento estático. No necesita backend. El HTML original, las capturas de respaldo y `scripts/` no son necesarios en producción.

@@ -2,37 +2,48 @@ import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Script } from 'node:vm';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const html = await readFile(resolve(root, 'index.html'), 'utf8');
-const css = await readFile(resolve(root, 'css/styles.css'), 'utf8');
-const js = await readFile(resolve(root, 'js/main.js'), 'utf8');
+const load = (name) => readFile(resolve(root, name), 'utf8');
+const source = await load('Shasu Dev (5).html');
+const html = await load('index.html');
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]);
 assert.equal(ids.length, new Set(ids).size, 'Duplicate IDs');
-assert.match(html, /<html lang="es">/);
-assert.equal([...html.matchAll(/<h1\b/g)].length, 1, 'One main heading');
-assert.match(css, /prefers-reduced-motion/);
-assert(!/\beval\s*\(|requestAnimationFrame|setInterval/.test(js), 'No eval or animation loops');
+assert(!/<style\b/.test(html), 'Styles must be external');
+assert(!/<script\b[^>]*>\s*[^\s<]/.test(html), 'Scripts must be external');
+assert(!html.includes('data:image/png;base64,'), 'Embedded logo must be a shared asset');
+
 let references = 0;
-for (const [, attribute, value] of html.matchAll(/\b(href|src)="([^"]+)"/g)) {
+for (const [, value] of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
   if (/^https?:/.test(value)) continue;
-  if (value.startsWith('#')) {
-    assert(ids.includes(value.slice(1)), `Broken fragment: ${value}`);
-  } else {
-    assert((await stat(resolve(root, value))).isFile(), `Missing ${attribute}: ${value}`);
-  }
+  if (value.startsWith('#')) assert(ids.includes(value.slice(1)), `Broken anchor: ${value}`);
+  else assert((await stat(resolve(root, value))).isFile(), `Missing file: ${value}`);
   references++;
 }
-for (const match of html.matchAll(/<a\b[^>]*target="_blank"[^>]*>/g)) {
-  assert.match(match[0], /rel="[^"]*noopener/, 'External links need noopener');
+
+const sourceStyles = [...source.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((match) => match[1]);
+const cssFiles = ['css/reset.css', 'css/styles.css'];
+for (const [index, file] of cssFiles.entries()) {
+  assert.equal(await load(file), sourceStyles[index], `Original CSS was changed: ${file}`);
 }
-for (const match of html.matchAll(/<img\b[^>]*>/g)) {
-  for (const attribute of ['alt=', 'width=', 'height=']) assert(match[0].includes(attribute), `Image missing ${attribute}`);
+const sourceScripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+  .filter((match) => !/\bsrc\s*=/.test(match[1])).map((match) => match[2]);
+const scriptFiles = ['js/language.js', 'js/editor.js', 'js/interactions.js', 'js/scene.js', 'js/terminal.js'];
+for (const [index, file] of scriptFiles.entries()) {
+  const code = await load(file);
+  assert.equal(code, sourceScripts[index], `Original JavaScript was changed: ${file}`);
+  new Script(code, { filename: file });
 }
-for (const match of html.matchAll(/<([a-z0-9]+)\b[^>]*\bdata-en="[^"]*"[^>]*>([\s\S]*?)<\/\1>/g)) {
-  assert(!/<[a-z]/i.test(match[2]), 'Translated text must not contain nested elements');
-}
-console.log(`OK: ${ids.length} unique IDs, ${references} local references, image dimensions, safe links and translation structure.`);
-const files = ['index.html', 'css/styles.css', 'js/main.js', 'assets/logo.png', 'assets/pandatec.png', 'assets/favicon.svg'];
-const total = (await Promise.all(files.map((file) => stat(resolve(root, file))))).reduce((sum, info) => sum + info.size, 0);
-console.log(`Public site: ${(total / 1024).toFixed(1)} KB uncompressed. No external runtime dependencies.`);
+
+const normalizeBody = (input) => input.slice(input.indexOf('<div class="progress"'))
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+  .replace(/data:image\/png;base64,[A-Za-z0-9+/=]+/g, 'assets/logo.png');
+assert.equal(normalizeBody(html), normalizeBody(source), 'The original body content/layout was changed');
+const embeddedLogo = source.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/)[1];
+assert((await readFile(resolve(root, 'assets/logo.png'))).equals(Buffer.from(embeddedLogo, 'base64')), 'Logo differs from original');
+const originalExternal = [...source.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((match) => match[1]);
+const allScripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((match) => match[1]);
+assert.deepEqual(allScripts, [...originalExternal, ...scriptFiles], 'Script load order was changed');
+console.log(`OK: ${ids.length} unique IDs and ${references} local references.`);
+console.log('OK: original body, 2 CSS blocks, 5 JavaScript blocks, logo and script order preserved exactly.');
