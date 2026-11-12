@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Script } from 'node:vm';
+import { Script, runInNewContext } from 'node:vm';
+import { fixLocalTexture } from './lib/scene-texture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const load = (name) => readFile(resolve(root, name), 'utf8');
@@ -32,7 +33,9 @@ const sourceScripts = [...source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>
 const scriptFiles = ['js/language.js', 'js/editor.js', 'js/interactions.js', 'js/scene.js', 'js/terminal.js'];
 for (const [index, file] of scriptFiles.entries()) {
   const code = await load(file);
-  assert.equal(code, sourceScripts[index], `Original JavaScript was changed: ${file}`);
+  const expected = file === 'js/scene.js' ? fixLocalTexture(sourceScripts[index]) : sourceScripts[index];
+  const normalize = (value) => value.replace(/\r\n/g, '\n');
+  assert.equal(normalize(code), normalize(expected), `Unexpected JavaScript change: ${file}`);
   new Script(code, { filename: file });
 }
 
@@ -42,8 +45,13 @@ const normalizeBody = (input) => input.slice(input.indexOf('<div class="progress
 assert.equal(normalizeBody(html), normalizeBody(source), 'The original body content/layout was changed');
 const embeddedLogo = source.match(/data:image\/png;base64,([A-Za-z0-9+/=]+)/)[1];
 assert((await readFile(resolve(root, 'assets/logo.png'))).equals(Buffer.from(embeddedLogo, 'base64')), 'Logo differs from original');
+const textureCode = await load('js/logo-texture.js');
+const context = { window: {} };
+runInNewContext(textureCode, context, { timeout: 1000 });
+assert.equal(context.window.__shasuLogoTexture, `data:image/png;base64,${embeddedLogo}`, 'Local-file texture differs from the original logo');
 const originalExternal = [...source.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((match) => match[1]);
 const allScripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((match) => match[1]);
 assert.deepEqual(allScripts, [...originalExternal, ...scriptFiles], 'Script load order was changed');
 console.log(`OK: ${ids.length} unique IDs and ${references} local references.`);
-console.log('OK: original body, 2 CSS blocks, 5 JavaScript blocks, logo and script order preserved exactly.');
+console.log('OK: original body, CSS, scene appearance, logo and script order preserved.');
+console.log('OK: only the expected file:// texture-loading fix differs from the original scripts.');

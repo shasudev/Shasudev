@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fixLocalTexture, buildLogoTextureScript } from './lib/scene-texture.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = await readFile(resolve(root, 'Shasu Dev (5).html'), 'utf8');
@@ -15,7 +16,10 @@ assert.equal(scripts.length, scriptFiles.length, 'Unexpected number of original 
 
 for (const folder of ['css', 'js', 'assets']) await mkdir(resolve(root, folder), { recursive: true });
 for (const [index, match] of styles.entries()) await writeFile(resolve(root, styleFiles[index]), match[1], 'utf8');
-for (const [index, match] of scripts.entries()) await writeFile(resolve(root, scriptFiles[index]), match[2], 'utf8');
+for (const [index, match] of scripts.entries()) {
+  const code = scriptFiles[index] === 'js/scene.js' ? fixLocalTexture(match[2]) : match[2];
+  await writeFile(resolve(root, scriptFiles[index]), code, 'utf8');
+}
 
 let html = source;
 let styleIndex = 0;
@@ -30,7 +34,9 @@ html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (full, attributes
 const embeddedImages = [...html.matchAll(/data:image\/png;base64,([A-Za-z0-9+/=]+)/g)];
 assert.equal(embeddedImages.length, 3);
 assert(embeddedImages.every((match) => match[1] === embeddedImages[0][1]), 'Unexpected different embedded images');
-await writeFile(resolve(root, 'assets/logo.png'), Buffer.from(embeddedImages[0][1], 'base64'));
+const logo = Buffer.from(embeddedImages[0][1], 'base64');
+await writeFile(resolve(root, 'assets/logo.png'), logo);
+await writeFile(resolve(root, 'js/logo-texture.js'), buildLogoTextureScript(logo), 'utf8');
 html = html.replace(/data:image\/png;base64,[A-Za-z0-9+/=]+/g, 'assets/logo.png');
 
 // Move the existing metadata and stylesheets into a valid head, without changing the body.
@@ -43,3 +49,4 @@ const head = `<!doctype html>\n<html lang="es">\n<head>\n${metadata.slice(0, 2).
 await writeFile(resolve(root, 'index.html'), head + html.slice(bodyStart), 'utf8');
 console.log('Original design separated: index.html, 2 stylesheets, 5 scripts and one shared logo.');
 console.log('No content, palette, animation or project changes applied.');
+console.log('Local-file compatibility: the 3D scene uses the original embedded logo texture on file://.');

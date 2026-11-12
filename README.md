@@ -34,6 +34,7 @@ js/language.js              Español/inglés y copiar usuario
 js/editor.js                Animación del editor de código
 js/interactions.js          Navegación, apariciones y cursor con partículas
 js/scene.js                 Escena 3D con Three.js
+js/logo-texture.js          Logo original incrustado para textura 3D en file://
 js/terminal.js              Efecto de tarjetas y terminal interactiva
 assets/logo.png             Logo original compartido, antes repetido en base64
 assets/pandatec.png          Captura disponible; no insertada en el diseño original
@@ -46,7 +47,9 @@ captura.png                Captura original intacta
 
 ## Qué se conserva
 
-La paleta, tipografías, secciones, textos, elementos de ejemplo, orden, efectos, cursor, escena 3D y terminal del archivo original. El CSS y el JavaScript se extrajeron sin modificar sus bloques ni su orden de ejecución. El encabezado HTML se organizó con sus metadatos dentro de `head`.
+La paleta, tipografías, secciones, textos, elementos de ejemplo, orden, efectos, cursor, escena 3D y terminal del archivo original. El CSS y el JavaScript mantienen su orden de ejecución. El encabezado HTML se organizó con sus metadatos dentro de `head`.
+
+**Compatibilidad al abrir con doble clic:** en `file://`, los navegadores pueden bloquear imágenes externas usadas en texturas WebGL. Para evitarlo, `js/scene.js` carga `js/logo-texture.js` únicamente en ese modo. Contiene exactamente el PNG incrustado del original, que no contamina el canvas. En HTTP/HTTPS sigue usando `assets/logo.png` y no descarga ese archivo adicional. No cambian el material, la iluminación ni la apariencia del cubo.
 
 También se mantienen **Google Fonts y Three.js desde CDN**, como en el original. Se necesita conexión para descargar esas fuentes y el motor 3D. Si Three.js no está disponible, la escena no se inicia; no se introduce una dependencia de Node.js.
 
@@ -58,7 +61,7 @@ La captura de Pandatec está guardada, pero la tarjeta en `main` conserva la pre
 npm run check
 ```
 
-Comprueba sintaxis, referencias, logo, orden de scripts y que el cuerpo HTML, CSS y JavaScript coincidan con el original después de separar archivos. Esto verifica la extracción, no es una auditoría visual ni de accesibilidad del diseño original.
+Comprueba sintaxis, referencias, logo, orden de scripts y coincidencia con el original, permitiendo únicamente la corrección de carga de textura en `file://`. Verifica también que la textura incrustada sea idéntica al logo original. Esto no sustituye pruebas en navegador ni una auditoría de accesibilidad.
 
 Si más adelante personalizas el sitio, adapta las comprobaciones de igualdad: están pensadas para esta separación inicial. No ejecutes `scripts/separate-original.mjs` sobre cambios personalizados sin guardarlos; regenera `index.html`, los dos CSS, los cinco scripts y el logo a partir del original.
 

@@ -53,7 +53,24 @@
 
   var img = new Image();
   img.onload = function () { cc.drawImage(img, 40, 40, 432, 432); tex.needsUpdate = true; if (reduce) draw(0); };
-  img.src = brandImg.currentSrc || brandImg.src;
+  // file:// images taint a canvas, so use the original embedded PNG locally.
+  // HTTP/HTTPS keep using the shared image without loading an extra asset.
+  if (window.location.protocol === "file:") {
+    var textureLoader = document.createElement("script");
+    textureLoader.src = new URL("logo-texture.js", document.currentScript.src).href;
+    textureLoader.onload = function () {
+      img.src = window.__shasuLogoTexture;
+      delete window.__shasuLogoTexture;
+      textureLoader.remove();
+    };
+    textureLoader.onerror = function () {
+      console.warn("Shasu Dev: no se pudo cargar js/logo-texture.js para la textura 3D.");
+      textureLoader.remove();
+    };
+    document.head.appendChild(textureLoader);
+  } else {
+    img.src = brandImg.currentSrc || brandImg.src;
+  }
 
   var base = { sc: 1, W: 8, H: 5.5, wide: true };
   function layout() {
